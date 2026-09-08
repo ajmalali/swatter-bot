@@ -45,3 +45,13 @@ Agreed 2026-09-08. Vocabulary is in `CONTEXT.md`; the reasoning behind the big c
 ## Cost
 
 Under $1 a month in LLM spend at under 100 Reports a month, $0 with Ollama. Hosting is $0 on existing hardware or about $5 on a small VPS.
+
+## Names
+
+- GitHub repository: `swatter-bot`
+- Slack app and bot user: Swatter, mentioned as `@swatter`
+- Slash command: `/swatter`
+- GitHub App slug: `swatter` (adopters suffix their own, since app names are global)
+- Bot identity on Issues: `swatter[bot]` when using the GitHub App
+- Python package: `swatter`
+- Attachments branch: `swatter-assets`
