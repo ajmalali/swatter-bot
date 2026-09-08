@@ -1,0 +1,9 @@
+services:
+  swatter:
+    build: .
+    env_file: .env
+    environment:
+      SWATTER_DB_PATH: /data/swatter.db
+    volumes:
+      - ./data:/data
+    restart: unless-stopped

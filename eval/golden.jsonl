@@ -1,0 +1,3 @@
+{"id": "g001", "repo": "example/webapp", "report": "checkout button just spins forever after I click pay, tried twice on chrome", "expected_match": 124, "note": "paraphrase of #124 'Payment submit hangs indefinitely'"}
+{"id": "g002", "repo": "example/webapp", "report": "getting ERR_CONNECTION_RESET on /api/export when the CSV is over 10MB", "expected_match": null, "note": "new issue; exact token should not match unrelated export issues"}
+{"id": "g003", "repo": "example/webapp", "report": "dark mode toggle doesn't stick after refresh, same bug as last month?", "expected_match": 98, "note": "closed 12 days ago; should surface as a regression"}

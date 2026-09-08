@@ -1,0 +1,16 @@
+{
+  "name": "swatter",
+  "url": "https://github.com/OWNER/swatter-bot",
+  "description": "Turns Slack bug reports into deduplicated GitHub issues and tells the reporter when they close.",
+  "public": false,
+  "hook_attributes": {
+    "active": false,
+    "url": "https://example.invalid/swatter-does-not-use-webhooks"
+  },
+  "default_permissions": {
+    "issues": "write",
+    "contents": "write",
+    "metadata": "read"
+  },
+  "default_events": []
+}

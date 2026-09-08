@@ -1,0 +1,43 @@
+# Create the Slack app at https://api.slack.com/apps -> "From a manifest" and paste this file.
+# Then: Basic Information -> App-Level Tokens -> generate one with connections:write (SLACK_APP_TOKEN),
+# and Install to Workspace to get the bot token (SLACK_BOT_TOKEN).
+display_information:
+  name: Swatter
+  description: Turns bug reports into GitHub issues and tells you when they are fixed.
+  background_color: "#1f1f1f"
+features:
+  bot_user:
+    display_name: Swatter
+    always_online: true
+  slash_commands:
+    - command: /swatter
+      description: Bind this channel to a GitHub repo
+      usage_hint: connect owner/repo [template]
+      should_escape: false
+  shortcuts:
+    - name: File as bug
+      type: message
+      callback_id: file_bug
+      description: Send this message to Swatter to file as a GitHub issue
+oauth_config:
+  scopes:
+    bot:
+      - app_mentions:read
+      - chat:write
+      - im:write
+      - commands
+      - channels:history
+      - groups:history
+      - files:read
+      - users:read
+settings:
+  event_subscriptions:
+    bot_events:
+      - app_mention
+      - message.channels
+      - message.groups
+  interactivity:
+    is_enabled: true
+  org_deploy_enabled: false
+  socket_mode_enabled: true
+  token_rotation_enabled: false
