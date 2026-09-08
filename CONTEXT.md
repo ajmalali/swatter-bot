@@ -1,4 +1,4 @@
-# BugBot
+# Swatter
 
 A self-hosted bot that turns bug reports made in Slack into well-formed GitHub issues, checks them against existing issues before filing, and tells the reporter when the issue is resolved.
 
@@ -29,7 +29,7 @@ The link between a Slack user and an Issue that says the user is told when it cl
 _Avoid_: Mapping, watcher, reporter record
 
 **Template**:
-The layout every Issue body follows. The repo's own GitHub issue template when it has one, otherwise BugBot's default.
+The layout every Issue body follows. The repo's own GitHub issue template when it has one, otherwise Swatter's default.
 _Avoid_: Format, schema, layout
 
 **Clarification**:

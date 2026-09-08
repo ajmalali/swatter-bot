@@ -1,4 +1,4 @@
-# BugBot design
+# Swatter design
 
 Agreed 2026-09-08. Vocabulary is in `CONTEXT.md`; the reasoning behind the big choices is in `docs/adr/`.
 
@@ -13,8 +13,8 @@ Agreed 2026-09-08. Vocabulary is in `CONTEXT.md`; the reasoning behind the big c
 - GitHub auth: fine-grained PAT for quick start, GitHub App as the documented upgrade. Same PyGithub client either way.
 - LLM: one setting, OpenAI-compatible base URL, key, and model (ADR 0002). Anthropic, OpenAI, OpenRouter, Groq, or Ollama. No per-task override yet.
 - Embeddings: fastembed locally by default; optional OpenAI-compatible embeddings endpoint.
-- Bindings: env default repo, overridden per channel by `/bugbot connect owner/repo [template]`. Anyone may run it; the actor is logged.
-- Template: the repo's issue template whose filename contains "bug", or the one named on the Binding, else BugBot's default. Issue forms supply required fields; for Markdown templates, steps, expected, and actual count as required.
+- Bindings: env default repo, overridden per channel by `/swatter connect owner/repo [template]`. Anyone may run it; the actor is logged.
+- Template: the repo's issue template whose filename contains "bug", or the one named on the Binding, else Swatter's default. Issue forms supply required fields; for Markdown templates, steps, expected, and actual count as required.
 
 ## Flow for one Report
 
@@ -23,7 +23,7 @@ Agreed 2026-09-08. Vocabulary is in `CONTEXT.md`; the reasoning behind the big c
 3. Hybrid retrieval over the bound repo's open Issues and those closed within 30 days: FTS5 top 10, cosine top 10, reciprocal rank fusion, top three to the LLM judge (ADR 0003).
 4. Candidates found: offer up to three Append buttons plus Force New Issue. Closed Candidates get reopen wording. Append posts a templated comment with the verbatim quote and Slack permalink. No Clarification on this path.
 5. No Candidates and required fields empty: one Clarification message in the thread with up to three LLM-written questions and, when the LLM flags it, a screenshot request. Anyone in the thread may answer. Ends on Done, Skip, or a 30-minute timer. Unanswered questions are logged. Re-structure, retrieve once more.
-6. Confirmation modal with editable fields; anyone in the channel may confirm. Code renders the Template, quotes the Report verbatim, adds reporter display name, channel, and permalink, embeds Attachments from the `bugbot-assets` orphan branch, and marks empty fields as not provided.
+6. Confirmation modal with editable fields; anyone in the channel may confirm. Code renders the Template, quotes the Report verbatim, adds reporter display name, channel, and permalink, embeds Attachments from the `swatter-assets` orphan branch, and marks empty fields as not provided.
 7. Filing or appending creates a Subscription. Polling catches close, reopen, edits, and Issues filed outside Slack, and keeps the index current. Close notifies by DM and thread reply, with distinct wording for completed versus not planned. Reopen replies in the thread.
 
 ## Storage and evidence
