@@ -4,6 +4,7 @@ Swatter turns bug reports made in Slack into well-formed GitHub Issues, checks e
 existing Issues before filing, and tells the reporter when the Issue is closed or reopened.
 
 - Mention `@swatter` or use the **File as bug** message shortcut.
+  `@swatter help` says what it does and where this channel files.
 - The LLM fills a template; code renders it. Every Issue looks the same.
 - Duplicates are found with hybrid search (keyword and embeddings) and confirmed by the LLM.
 - Missing details trigger at most one clarifying message with up to three questions.

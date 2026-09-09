@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 
-from swatter.models import Candidate, ClarificationPlan, Draft
+from swatter.models import Binding, Candidate, ClarificationPlan, Draft
 from swatter.templates import ParsedTemplate
 
 CONFIRM_VIEW_ID = "confirm_issue"
@@ -213,6 +213,40 @@ def appended_text(url: str, repo: str, number: int, reopened: bool) -> str:
     return (
         f"{verb} your report to <{url}|{repo}#{number}>. "
         "I will let you know here when it is closed."
+    )
+
+
+def help_text(bindings: list[Binding], default_repo: str | None, max_questions: int) -> str:
+    """What Swatter does and what the reader has to do, for `@swatter help` and `/swatter help`."""
+    if bindings:
+        where = "\n".join(
+            f"- `{b.repo}`" + (f" (template `{b.template}`)" if b.template else "")
+            for b in bindings
+        )
+    elif default_repo and default_repo.lower() != "owner/repo":
+        where = f"- `{default_repo}` (the default; this channel has no Binding of its own)"
+    else:
+        where = "- nothing yet — run `/swatter connect owner/repo` first"
+    return (
+        "*I turn bug reports in this channel into GitHub issues,"
+        " and tell you when they are fixed.*\n\n"
+        "*Reporting a bug*\n"
+        "- Describe the bug in the channel, then reply `@swatter` in its thread.\n"
+        "- Or use the *File as bug* message shortcut on the message itself.\n"
+        "- Either way I read the whole thread, so screenshots and replies come along.\n\n"
+        "*What I do next*\n"
+        "1. I look for issues that already describe it. If I find one, I offer to add your"
+        " report to it instead of filing a duplicate.\n"
+        f"2. If something important is missing I ask up to {max_questions} questions in one"
+        " message. Answer them in the thread, then press *Done*.\n"
+        "3. I show you the issue before it is filed. Every field is editable, and nothing is"
+        " filed until someone presses *File issue*.\n"
+        "4. When the issue closes or reopens, I say so here and send you a DM.\n\n"
+        "*This channel files into*\n"
+        f"{where}\n\n"
+        "*Commands*\n"
+        "`/swatter list` · `/swatter connect owner/repo [template]` ·"
+        " `/swatter disconnect owner/repo` · `/swatter help`"
     )
 
 

@@ -97,6 +97,8 @@ class FakeGitHub:
         self.reopened: list[tuple[str, int]] = []
         self.uploads: list[tuple[str, str]] = []
         self.issues: dict[str, list] = {}  # repo -> IssueRecords returned by list_issues_since
+        self.deleted: set[tuple[str, int]] = set()  # gone from GitHub; issue_exists says so
+        self.exists_error: Exception | None = None
         self.next_number = 100
 
     def describe_repo(self, repo):
@@ -138,7 +140,16 @@ class FakeGitHub:
         return f"https://github.com/{repo}/blob/swatter-assets/{filename}?raw=true"
 
     def list_issues_since(self, repo, since):
-        return [i for i in self.issues.get(repo, []) if since is None or i.updated_at > since]
+        return [
+            i
+            for i in self.issues.get(repo, [])
+            if (repo, i.number) not in self.deleted and (since is None or i.updated_at > since)
+        ]
+
+    def issue_exists(self, repo, number):
+        if self.exists_error is not None:
+            raise self.exists_error
+        return (repo, number) not in self.deleted
 
 
 class Ctx:

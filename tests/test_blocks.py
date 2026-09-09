@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
-from swatter.models import Draft
-from swatter.slack.blocks import edit_modal, settled_message
+from swatter.models import Binding, Draft
+from swatter.slack.blocks import edit_modal, help_text, settled_message
 from swatter.templates import parse_issue_form
 from tests.test_llm_jobs import FORM
 
@@ -56,3 +56,22 @@ def test_settled_message_keeps_text_drops_buttons():
     assert [b["type"] for b in out] == ["section", "section", "context"]
     assert "accessory" not in out[1]
     assert out[-1]["elements"][0]["text"] == "<@U1> pressed Done."
+
+
+def _binding(repo, template=None):
+    return Binding(
+        channel_id="C1", repo=repo, template=template, bound_by="U1", bound_at=datetime.now(UTC)
+    )
+
+
+def test_help_text_lists_every_repo_the_channel_files_into():
+    text = help_text([_binding("o/web"), _binding("o/api", "bug.yml")], "o/other", 3)
+    assert "`o/web`" in text and "`o/api`" in text and "template `bug.yml`" in text
+    assert "o/other" not in text  # the default is only mentioned when there is no Binding
+    assert "up to 3 questions" in text
+
+
+def test_help_text_falls_back_to_the_default_repo():
+    assert "`o/other`" in help_text([], "o/other", 3)
+    assert "/swatter connect owner/repo` first" in help_text([], "owner/repo", 3)
+    assert "/swatter connect owner/repo` first" in help_text([], None, 3)

@@ -1,0 +1,3 @@
+# Concurrent appends from two branches must merge, not conflict: union keeps
+# both sides' records and `flux state get` replays them last-write-wins.
+state.jsonl merge=union

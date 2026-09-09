@@ -91,6 +91,13 @@ def upsert_issue(db: Database, issue: IssueRecord, embedding: np.ndarray | None)
         )
 
 
+def delete_issue(db: Database, repo: str, number: int) -> bool:
+    """Drop one row from the index. DELETE, not REPLACE, so issues_ad clears FTS with it."""
+    with db.tx() as conn:
+        cur = conn.execute("DELETE FROM issues WHERE repo = ? AND number = ?", (repo, number))
+        return cur.rowcount > 0
+
+
 def issue_needs_embedding(db: Database, issue: IssueRecord) -> bool:
     """True when the stored text differs or no vector is stored yet."""
     row = db.one(

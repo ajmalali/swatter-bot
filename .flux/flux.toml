@@ -1,0 +1,20 @@
+# .flux/flux.toml — the whole per-repo adapter. Written by `flux init`.
+
+[check]
+command = "uv run ruff check . && uv run pytest -q"
+filter  = "failures"          # failures | tail:80 | raw
+verified = true              # flips to true on the first full `flux check` pass
+
+[state]
+budget_tokens = 2000          # flux refuses to emit or store more than this
+
+[guard]                       # session-boundary hooks (guard/seal). All optional —
+# warn_requests = 120         #   guard nudges to wrap past this request count
+# renudge       = 25          #   ...then stays quiet until this many more
+# stale_days    = 2           #   prime tags a state key ` [Nd]` older than this
+# substantive_seconds = 180   #   seal calls a session real (worth a wrap) past this
+# cycle_refresh_hours = 6      #   flux repo: prime recomputes the fleet cycle count past this
+
+[run]
+tail = 100                    # `flux run` keeps at most this many trailing lines
+filter = "elide"              # elide | failures | tail:80 | raw (--filter overrides)

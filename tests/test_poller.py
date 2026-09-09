@@ -144,3 +144,57 @@ def test_expired_clarification_is_finished(ctx, monkeypatch):
     )
     poller.run_once(ctx)
     assert finished == [("d1", False)]
+
+
+def _fts_hits(db, term):
+    return db.one("SELECT count(*) AS n FROM issues_fts WHERE issues_fts MATCH ?", (term,))["n"]
+
+
+def test_full_sync_prunes_issues_github_no_longer_has(ctx):
+    t0 = datetime.now(UTC) - timedelta(hours=1)
+    ctx.github.issues["o/web"] = [
+        _rec(1, "open", t0, title="Checkout spinner"),
+        _rec(2, "open", t0, title="Zebra stripes misaligned"),
+    ]
+    assert poller.poll_repo(ctx, "o/web") == 2
+    assert _fts_hits(ctx.db, "zebra") == 1
+
+    # An admin deletes #2. GitHub simply stops listing it; only asking directly reveals that.
+    ctx.github.deleted.add(("o/web", 2))
+    assert poller.sync_repo(ctx, "o/web") == (1, 1)
+    assert [r["number"] for r in ctx.db.query("SELECT number FROM issues")] == [1]
+    assert _fts_hits(ctx.db, "zebra") == 0
+
+
+def test_prune_leaves_rows_alone_when_github_cannot_answer(ctx):
+    t0 = datetime.now(UTC) - timedelta(hours=1)
+    ctx.github.issues["o/web"] = [_rec(1, "open", t0), _rec(2, "open", t0)]
+    assert poller.poll_repo(ctx, "o/web") == 2
+    ctx.github.deleted.add(("o/web", 2))
+    ctx.github.exists_error = RuntimeError("403 rate limit exceeded")
+    # A rate limit is not a deletion: the row stays.
+    assert poller.sync_repo(ctx, "o/web") == (1, 0)
+    assert store.get_issue(ctx.db, "o/web", 2) is not None
+
+
+def test_full_sync_prunes_when_every_issue_is_gone(ctx):
+    ctx.github.issues["o/web"] = [_rec(1, "open", datetime.now(UTC) - timedelta(hours=1))]
+    assert poller.poll_repo(ctx, "o/web") == 1
+    ctx.github.deleted.add(("o/web", 1))
+    assert poller.sync_repo(ctx, "o/web") == (0, 1)
+    assert store.get_issue(ctx.db, "o/web", 1) is None
+
+
+def test_sync_command_reports_what_it_pruned(ctx, monkeypatch, capsys):
+    from swatter import cli
+
+    ctx.github.issues["o/web"] = [
+        _rec(1, "open", datetime.now(UTC) - timedelta(hours=1)),
+        _rec(2, "open", datetime.now(UTC) - timedelta(hours=1)),
+    ]
+    poller.poll_repo(ctx, "o/web")
+    ctx.github.deleted.add(("o/web", 2))
+    monkeypatch.setattr(cli, "_context", lambda settings: ctx)
+    assert cli._sync(ctx.settings, "o/web") == 0
+    out = capsys.readouterr().out
+    assert "o/web: fetched 1, pruned 1, index holds 1, cursor 20" in out

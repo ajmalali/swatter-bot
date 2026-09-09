@@ -120,11 +120,11 @@ def _sync(settings, repo: str | None) -> int:  # noqa: ANN001
         print("No bound repos. Run /swatter connect in Slack or set GITHUB_DEFAULT_REPO.")
         return 1
     for name in repos:
-        n = poller.poll_repo(ctx, name, full=True)
+        n, pruned = poller.sync_repo(ctx, name)
         total = ctx.db.one("SELECT COUNT(*) AS n FROM issues WHERE repo = ?", (name,))["n"]
         cursor = store.get_cursor(ctx.db, name)
         print(
-            f"{name}: fetched {n}, index holds {total}, "
+            f"{name}: fetched {n}, pruned {pruned}, index holds {total}, "
             f"cursor {cursor.isoformat() if cursor else 'none'}"
         )
     return 0

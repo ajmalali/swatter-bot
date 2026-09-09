@@ -141,7 +141,8 @@ def start_draft(
             client,
             channel_id,
             thread_ts,
-            "No repo is bound to this channel. Run `/swatter connect owner/repo` first.",
+            "No repo is bound to this channel. Run `/swatter connect owner/repo` first."
+            " Say `@swatter help` if you are not sure what I do.",
         )
         return None
     existing = store.draft_in_thread(ctx.db, channel_id, thread_ts)
@@ -300,6 +301,7 @@ def append_draft(
     """Comment on an existing Issue with the verbatim Report; reopen it first if closed."""
     if draft.state not in ACTIVE_STATES:
         raise PipelineError("This report was already handled.")
+    _require_issue(ctx, repo, number)
     report = fetch_report(
         ctx,
         client,
@@ -359,6 +361,7 @@ def _decide(
         closed_lookback_days=ctx.settings.swatter_closed_lookback_days,
         limit=ctx.settings.swatter_max_candidates,
     )
+    found = _verify_candidates(ctx, found)
     confirmed = judge_candidates(
         ctx.llm, ctx.db, draft_fields=draft.fields, candidates=found, draft_id=draft.id
     )
@@ -410,6 +413,50 @@ def _decide(
 
 
 # ---- Lookups -----------------------------------------------------------------------------
+
+
+def _verify_candidates(ctx, found: list) -> list:  # noqa: ANN001
+    """Drop Candidates GitHub no longer has, so the judge and the reporter never see them.
+
+    The index cannot learn about a deletion on its own (see poller.reconcile_repo), and a dead
+    Candidate costs a reporter a click and a 404. Fails open: an unanswerable check keeps the
+    Candidate, because a rate limit is not a deletion.
+    """
+    kept = []
+    for candidate in found:
+        try:
+            gone = not ctx.github.issue_exists(candidate.repo, candidate.number)
+        except Exception:  # noqa: BLE001
+            log.exception(
+                "could not check whether %s#%s still exists", candidate.repo, candidate.number
+            )
+            kept.append(candidate)
+            continue
+        if gone:
+            store.delete_issue(ctx.db, candidate.repo, candidate.number)
+            log.info(
+                "%s#%s is gone from GitHub; dropped from the index",
+                candidate.repo,
+                candidate.number,
+            )
+        else:
+            kept.append(candidate)
+    return kept
+
+
+def _require_issue(ctx, repo: str, number: int) -> None:  # noqa: ANN001
+    """Raise before touching an Issue that GitHub no longer has, and forget it."""
+    try:
+        if ctx.github.issue_exists(repo, number):
+            return
+    except Exception:  # noqa: BLE001
+        log.exception("could not check whether %s#%s still exists", repo, number)
+        return
+    store.delete_issue(ctx.db, repo, number)
+    raise PipelineError(
+        f"{repo}#{number} no longer exists on GitHub, so I dropped it from my index."
+        " Use *File as new issue* on the message above."
+    )
 
 
 def bound_repos(ctx, channel_id: str) -> list[str]:  # noqa: ANN001

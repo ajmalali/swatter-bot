@@ -77,6 +77,19 @@ class GitHubService:
                     break
         return sorted(records.values(), key=lambda r: r.updated_at)
 
+    def issue_exists(self, repo: str, number: int) -> bool:
+        """False when GitHub no longer serves this Issue under this repo.
+
+        A deletion 404s. A transfer redirects to the Issue's new home, which is just as gone
+        from here, so the html_url has to be checked too. Every other GithubException — a rate
+        limit, a 5xx — propagates: the caller must never read an outage as a deletion.
+        """
+        try:
+            issue = self._repo(repo).get_issue(number)
+        except UnknownObjectException:
+            return False
+        return f"/{repo}/issues/".lower() in (issue.html_url or "").lower()
+
     def list_labels(self, repo: str) -> list[str]:
         return [label.name for label in self._repo(repo).get_labels()]
 

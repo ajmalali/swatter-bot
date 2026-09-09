@@ -1,7 +1,7 @@
 """Slack entry points. Each one acks within Slack's 3-second window, then does the work.
 
 Triggers:   app_mention, message shortcut `file_bug`
-Command:    /swatter connect owner/repo [template] | disconnect owner/repo | list
+Command:    /swatter connect owner/repo [template] | disconnect owner/repo | list | help
 Actions:    append:<repo>#<n>, reopen:<repo>#<n>, force_new, open_issue, cancel,
             clarify_done, clarify_skip
 View:       confirm_issue (the edit modal's submission)
@@ -19,7 +19,7 @@ from slack_sdk import WebClient
 
 from swatter import pipeline, store
 from swatter.models import DraftState
-from swatter.slack.blocks import CONFIRM_VIEW_ID, settled_message, values_from_view
+from swatter.slack.blocks import CONFIRM_VIEW_ID, help_text, settled_message, values_from_view
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +33,8 @@ ACTION_IDS = (
     "reopen",
 )
 _REPO = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+# Whole-message match only: "help, the login page 500s" is a bug report, not a request for help.
+_HELP = re.compile(r"^\s*(?:<@[^>]+>\s*)*(?:help|halp|\?|usage|commands)[\s!.?]*$", re.I)
 _TARGET = re.compile(r"^(?:append|reopen):(?P<repo>[^#]+)#(?P<number>\d+)$")
 
 
@@ -41,6 +43,13 @@ def register_handlers(app: App, ctx) -> None:  # noqa: ANN001
     def on_mention(event: dict, body: dict, say: Say, client: WebClient) -> None:
         event_id = body.get("event_id") or f"mention:{event.get('channel')}:{event.get('ts')}"
         if not store.claim_event(ctx.db, event_id):
+            return
+        if _HELP.match(event.get("text") or ""):
+            client.chat_postMessage(
+                channel=event["channel"],
+                thread_ts=event.get("thread_ts") or event["ts"],
+                text=_help(ctx, event["channel"]),
+            )
             return
         _start(
             client,
@@ -118,11 +127,13 @@ def register_handlers(app: App, ctx) -> None:  # noqa: ANN001
                 if not target:
                     return
                 repo, number = target.group("repo"), int(target.group("number"))
+                # Settle only once the comment is in: if the Issue turns out to be gone, the
+                # buttons have to survive so the reporter can still file it as new.
+                pipeline.append_draft(ctx, client, draft, repo=repo, number=number, actor_id=actor)
                 settle(
                     f"<@{actor}> decided this is a duplicate of {repo}#{number}"
                     " and added the report there."
                 )
-                pipeline.append_draft(ctx, client, draft, repo=repo, number=number, actor_id=actor)
         except pipeline.PipelineError as exc:
             respond(text=str(exc), replace_original=False)
         except Exception as exc:  # noqa: BLE001
@@ -163,8 +174,16 @@ def register_handlers(app: App, ctx) -> None:  # noqa: ANN001
             log.exception("start_draft failed in %s", kwargs.get("channel_id"))
 
 
+def _help(ctx, channel_id: str) -> str:  # noqa: ANN001
+    return help_text(
+        store.bindings_for_channel(ctx.db, channel_id),
+        ctx.settings.github_default_repo,
+        ctx.settings.swatter_max_clarification_questions,
+    )
+
+
 def _run_command(ctx, command: dict) -> str:  # noqa: ANN001
-    """`/swatter connect owner/repo [template] | disconnect owner/repo | list`."""
+    """`/swatter connect owner/repo [template] | disconnect owner/repo | list | help`."""
     words = (command.get("text") or "").split()
     channel_id = command.get("channel_id", "")
     actor = command.get("user_id", "")
@@ -203,10 +222,7 @@ def _run_command(ctx, command: dict) -> str:  # noqa: ANN001
             for b in bindings
         ]
         return "This channel files into:\n" + "\n".join(lines)
-    return (
-        "Usage: `/swatter connect owner/repo [template]`, `/swatter disconnect owner/repo`,"
-        " `/swatter list`"
-    )
+    return _help(ctx, channel_id)
 
 
 def _binding_note(ctx, channel_id: str) -> str:  # noqa: ANN001

@@ -237,6 +237,46 @@ def test_append_to_closed_candidate_reopens(ctx):
     assert "Reopened and added" in slack.posted[-1]["text"]
 
 
+def test_deleted_candidate_never_reaches_the_judge(ctx):
+    _seed_issue(ctx, "o/web", 7, "Checkout spinner stuck", "spinner after pay on checkout")
+    ctx.github.deleted.add(("o/web", 7))
+    # Only the structuring reply is queued: a judge call here would fail on an empty FakeLLM.
+    ctx.llm = FakeLLM(STRUCTURED_FULL)
+    slack = FakeSlack(THREAD)
+    draft = _start(ctx, slack)
+    assert [c["task"] for c in ctx.llm.calls] == ["structure"]
+    assert draft.state == DraftState.AWAITING_CONFIRM
+    assert draft.candidates == []
+    assert store.get_issue(ctx.db, "o/web", 7) is None
+    hits = ctx.db.one("SELECT count(*) AS n FROM issues_fts WHERE issues_fts MATCH ?", ("stuck",))
+    assert hits["n"] == 0  # the FTS row went with it
+
+
+def test_candidate_survives_an_unanswerable_existence_check(ctx):
+    _seed_issue(ctx, "o/web", 7, "Checkout spinner stuck", "spinner after pay on checkout")
+    ctx.github.exists_error = RuntimeError("403 rate limit exceeded")
+    ctx.llm = FakeLLM(STRUCTURED_FULL, SAME)
+    slack = FakeSlack(THREAD)
+    draft = _start(ctx, slack)
+    assert [c.number for c in draft.candidates] == [7]
+    assert store.get_issue(ctx.db, "o/web", 7) is not None
+
+
+def test_append_to_deleted_issue_refuses_and_forgets_it(ctx):
+    _seed_issue(ctx, "o/web", 7, "Checkout spinner stuck", "spinner after pay on checkout")
+    ctx.llm = FakeLLM(STRUCTURED_FULL, SAME)
+    slack = FakeSlack(THREAD)
+    draft = _start(ctx, slack)
+    assert draft.state == DraftState.AWAITING_CHOICE
+    # Deleted between the Candidates being shown and the button being pressed.
+    ctx.github.deleted.add(("o/web", 7))
+    with pytest.raises(pipeline.PipelineError, match="no longer exists"):
+        pipeline.append_draft(ctx, slack, draft, repo="o/web", number=7, actor_id="UX")
+    assert ctx.github.comments == [] and ctx.github.reopened == []
+    assert store.get_draft(ctx.db, draft.id).state == DraftState.AWAITING_CHOICE
+    assert store.get_issue(ctx.db, "o/web", 7) is None
+
+
 def test_handled_draft_cannot_be_filed_again(ctx):
     ctx.llm = FakeLLM(STRUCTURED_FULL)
     slack = FakeSlack(THREAD)
