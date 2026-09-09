@@ -14,25 +14,14 @@ How it works: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Design and vocabular
 
 ## Quick start
 
-1. **Slack app.** At <https://api.slack.com/apps> choose *From a manifest* and paste
-   `manifests/slack-app.yaml`. Generate an app-level token with `connections:write`, then install
-   the app to your workspace. Note the bot token and the app-level token.
-2. **GitHub.** Create a fine-grained PAT with Issues, Contents, and Metadata on the repos you want,
-   or create a GitHub App from `manifests/github-app.json` (see below).
-3. **LLM.** Pick a provider and note its OpenAI-compatible base URL, key, and model.
-4. Copy `.env.example` to `.env` and fill it in.
-5. Run it:
+1. Create the Slack app from `manifests/slack-app.yaml`, a fine-grained GitHub PAT, and pick an
+   LLM provider.
+2. `cp .env.example .env`, fill in the tokens.
+3. `uv sync && uv run swatter run`, or `docker compose up -d`.
+4. In Slack: `/invite @Swatter`, then `/swatter connect owner/repo`.
 
-   ```sh
-   docker compose up -d          # or, without Docker:
-   uv sync && uv run swatter run
-   ```
-
-6. In Slack, invite the bot to a channel and run `/swatter connect owner/repo`. Run it again with a
-   second repo and Swatter will pick the right one per report from the repos' GitHub descriptions,
-   with a dropdown to override before filing.
-
-`uv run swatter health` checks Slack, GitHub, and the database.
+Step by step: [docs/SETUP.md](docs/SETUP.md). Hosting on a Pi, a server, or a VPS:
+[docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## GitHub App instead of a PAT
 
