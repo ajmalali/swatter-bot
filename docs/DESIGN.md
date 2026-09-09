@@ -40,7 +40,7 @@ Agreed 2026-09-08. Vocabulary is in `CONTEXT.md`; the reasoning behind the big c
 
 ## Slack scopes
 
-`app_mentions:read`, `chat:write`, `im:write`, `commands`, `channels:history`, `groups:history`, `files:read`, `users:read`, plus Socket Mode with an app-level token.
+`app_mentions:read`, `chat:write`, `im:write`, `commands`, `channels:history`, `channels:read`, `groups:history`, `groups:read`, `files:read`, `users:read`, plus Socket Mode with an app-level token. The two `:read` scopes exist only to print the channel name in the Issue footer; without them the footer shows the channel id.
 
 ## Cost
 

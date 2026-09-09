@@ -27,7 +27,9 @@ oauth_config:
       - im:write
       - commands
       - channels:history
+      - channels:read
       - groups:history
+      - groups:read
       - files:read
       - users:read
 settings:

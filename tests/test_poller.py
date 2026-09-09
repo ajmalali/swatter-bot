@@ -25,6 +25,11 @@ def ctx(base_env, monkeypatch, tmp_path):
     )
 
 
+def _later(minutes):
+    """Timestamps after the first poll, which sets the cursor to its own start time."""
+    return datetime.now(UTC) + timedelta(minutes=minutes)
+
+
 def _rec(number, state, updated, reason=None, title="Checkout spinner"):
     return IssueRecord(
         repo="o/web",
@@ -43,7 +48,11 @@ def test_poll_indexes_embeds_and_advances_cursor(ctx):
     t0 = datetime.now(UTC) - timedelta(hours=1)
     ctx.github.issues["o/web"] = [_rec(1, "open", t0), _rec(2, "open", t0 + timedelta(minutes=1))]
     assert poller.poll_repo(ctx, "o/web") == 2
-    assert store.get_cursor(ctx.db, "o/web") == t0 + timedelta(minutes=1)
+    # First poll: the cursor is the poll's start time, not the newest issue's updated_at.
+    assert store.get_cursor(ctx.db, "o/web") > t0 + timedelta(minutes=1)
+    ctx.github.issues["o/web"].append(_rec(3, "open", datetime.now(UTC) + timedelta(seconds=1)))
+    assert poller.poll_repo(ctx, "o/web") == 1
+    assert store.get_cursor(ctx.db, "o/web") == ctx.github.issues["o/web"][-1].updated_at
     row = ctx.db.one("SELECT embedding FROM issues WHERE number = 1")
     assert row["embedding"] is not None
     # Nothing newer: the next poll is a no-op.
@@ -76,19 +85,17 @@ def test_close_notifies_dm_and_thread_with_wording(ctx):
             created_at=t0,
         ),
     )
-    ctx.github.issues["o/web"] = [
-        _rec(1, "closed", t0 + timedelta(minutes=5), reason="not_planned")
-    ]
+    ctx.github.issues["o/web"] = [_rec(1, "closed", _later(5), reason="not_planned")]
     poller.poll_repo(ctx, "o/web")
     assert len(ctx.slack.dms) == 2 and "not planned" in ctx.slack.dms[0]["text"]
     assert len(ctx.slack.posted) == 1  # one thread reply for the shared thread
     assert "<@UREP> <@UTWO>" in ctx.slack.posted[0]["text"]
 
-    ctx.github.issues["o/web"] = [_rec(1, "open", t0 + timedelta(minutes=9))]
+    ctx.github.issues["o/web"] = [_rec(1, "open", _later(9))]
     poller.poll_repo(ctx, "o/web")
     assert "reopened" in ctx.slack.posted[-1]["text"] and len(ctx.slack.dms) == 2
 
-    ctx.github.issues["o/web"] = [_rec(1, "closed", t0 + timedelta(minutes=12), reason="completed")]
+    ctx.github.issues["o/web"] = [_rec(1, "closed", _later(12), reason="completed")]
     poller.poll_repo(ctx, "o/web")
     assert "fixed" in ctx.slack.dms[-1]["text"]
 
@@ -108,7 +115,7 @@ def test_edit_without_state_change_is_silent(ctx):
             created_at=t0,
         ),
     )
-    ctx.github.issues["o/web"] = [_rec(1, "open", t0 + timedelta(minutes=1), title="Retitled")]
+    ctx.github.issues["o/web"] = [_rec(1, "open", _later(1), title="Retitled")]
     poller.poll_repo(ctx, "o/web")
     assert ctx.slack.posted == [] and ctx.slack.dms == []
     assert store.get_issue(ctx.db, "o/web", 1).title == "Retitled"

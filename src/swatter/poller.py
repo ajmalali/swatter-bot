@@ -26,10 +26,16 @@ def run_once(ctx) -> None:  # noqa: ANN001  (AppContext lives in slack.app; avoi
 def poll_repo(ctx, repo: str, *, full: bool = False) -> int:  # noqa: ANN001
     """Fetch and index; returns how many Issues were touched. `full` re-embeds everything."""
     since = None if full else store.get_cursor(ctx.db, repo)
+    started = store.now()
     issues = ctx.github.list_issues_since(repo, since)
+    if since is None:
+        # A first fetch returns only open and recently closed Issues, so the newest updated_at
+        # among them is not a safe cursor: it would make the next poll refetch every Issue
+        # touched since then. The poll's own start time is.
+        store.set_cursor(ctx.db, repo, started)
     if not issues:
         return 0
-    newest = since
+    newest = since if since is not None else started
     for issue in issues:
         prior = store.get_issue(ctx.db, issue.repo, issue.number)
         vector = None
