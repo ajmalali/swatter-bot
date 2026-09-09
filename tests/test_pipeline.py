@@ -116,6 +116,7 @@ def test_missing_required_asks_then_finishes(ctx):
     assert draft.clarification_deadline > datetime.now(UTC) + timedelta(minutes=25)
     text = slack.last_blocks[0]["text"]["text"]
     assert "1. What did you click?" in text and "screenshot" in text
+    assert "press *Done*" in text and "in 30 minutes anyway" in text
     logged = ctx.db.query("SELECT field, answered FROM clarification_log ORDER BY id")
     assert [(r["field"], r["answered"]) for r in logged] == [
         ("steps_to_reproduce", 0),

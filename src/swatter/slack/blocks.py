@@ -55,14 +55,18 @@ def candidates_message(draft: Draft, candidates: list[Candidate]) -> list[dict]:
     return blocks
 
 
-def clarification_message(draft: Draft, plan: ClarificationPlan) -> list[dict]:
+def clarification_message(
+    draft: Draft, plan: ClarificationPlan, timeout_minutes: int
+) -> list[dict]:
     lines = [f"{i}. {_esc(q.question)}" for i, q in enumerate(plan.questions, start=1)]
     if plan.wants_screenshot:
         lines.append("A screenshot would help too, if you have one. Attach it in this thread.")
     text = (
         f"*{_esc(_title(draft))}*\nBefore I file this, could anyone here answer:\n"
         + "\n".join(lines)
-        + "\nReply in this thread, then press *Done*. Or *Skip* to file it as is."
+        + "\n\nReply in this thread. Once you have answered, press *Done* and I will read the"
+        f" replies. Or keep answering: I will read everything here in {timeout_minutes} minutes"
+        " anyway. *Skip* files it as it is."
     )
     return [
         _section(text),
@@ -169,6 +173,20 @@ def edit_modal(draft: Draft, template: ParsedTemplate, labels: list[str], repos:
         "close": {"type": "plain_text", "text": "Cancel"},
         "blocks": blocks[:100],
     }
+
+
+def settled_message(original: dict, note: str) -> list[dict]:
+    """The same message with its buttons removed and a line saying who pressed what.
+
+    Questions and Candidates stay readable in the thread after the decision.
+    """
+    kept: list[dict] = []
+    for block in original.get("blocks") or []:
+        if block.get("type") == "actions":
+            continue
+        kept.append({k: v for k, v in block.items() if k != "accessory"})
+    kept.append({"type": "context", "elements": [{"type": "mrkdwn", "text": note[:2000]}]})
+    return kept
 
 
 def values_from_view(view: dict) -> dict[str, str | list[str]]:

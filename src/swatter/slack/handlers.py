@@ -19,7 +19,7 @@ from slack_sdk import WebClient
 
 from swatter import pipeline, store
 from swatter.models import DraftState
-from swatter.slack.blocks import CONFIRM_VIEW_ID, values_from_view
+from swatter.slack.blocks import CONFIRM_VIEW_ID, settled_message, values_from_view
 
 log = logging.getLogger(__name__)
 
@@ -86,22 +86,28 @@ def register_handlers(app: App, ctx) -> None:  # noqa: ANN001
         if draft.state not in pipeline.ACTIVE_STATES:
             respond(text=f"This report was already {draft.state.value}.", replace_original=False)
             return
+
+        def settle(note: str) -> None:
+            """Keep the message's text, drop its buttons, and record who decided."""
+            respond(
+                text=note,
+                blocks=settled_message(body.get("message") or {}, note),
+                replace_original=True,
+            )
+
         try:
             if action_id == "cancel":
                 pipeline.cancel_draft(ctx, draft)
-                respond(text=f"Cancelled by <@{actor}>.", replace_original=True)
+                settle(f"Cancelled by <@{actor}>.")
             elif action_id == "open_issue":
                 pipeline.open_confirm_modal(ctx, client, draft, body["trigger_id"])
             elif action_id == "force_new":
-                respond(text=f"<@{actor}> chose to file a new issue.", replace_original=True)
+                settle(f"<@{actor}> chose to file a new issue.")
                 draft.state = DraftState.AWAITING_CONFIRM
                 store.save_draft(ctx.db, draft)
                 pipeline.open_confirm_modal(ctx, client, draft, body["trigger_id"])
             elif action_id in ("clarify_done", "clarify_skip"):
-                respond(
-                    text=f"<@{actor}> pressed {_button_name(action_id)}. One moment...",
-                    replace_original=True,
-                )
+                settle(f"<@{actor}> pressed {_button_name(action_id)}. One moment...")
                 pipeline.finish_clarification(
                     ctx, client, draft, skipped=action_id == "clarify_skip"
                 )
@@ -110,9 +116,7 @@ def register_handlers(app: App, ctx) -> None:  # noqa: ANN001
                 if not target:
                     return
                 repo, number = target.group("repo"), int(target.group("number"))
-                respond(
-                    text=f"<@{actor}> chose to add this to {repo}#{number}.", replace_original=True
-                )
+                settle(f"<@{actor}> chose to add this to {repo}#{number}.")
                 pipeline.append_draft(ctx, client, draft, repo=repo, number=number, actor_id=actor)
         except pipeline.PipelineError as exc:
             respond(text=str(exc), replace_original=False)

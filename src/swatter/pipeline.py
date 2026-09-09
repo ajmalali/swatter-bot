@@ -396,7 +396,9 @@ def _decide(
             _show(
                 client,
                 draft,
-                blocks.clarification_message(draft, plan),
+                blocks.clarification_message(
+                    draft, plan, ctx.settings.swatter_clarification_timeout_minutes
+                ),
                 "A few questions",
                 replace_ts,
             )
