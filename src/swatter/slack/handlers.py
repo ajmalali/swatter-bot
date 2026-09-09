@@ -98,11 +98,13 @@ def register_handlers(app: App, ctx) -> None:  # noqa: ANN001
         try:
             if action_id == "cancel":
                 pipeline.cancel_draft(ctx, draft)
-                settle(f"Cancelled by <@{actor}>.")
+                settle(f"<@{actor}> decided not to file this issue.")
             elif action_id == "open_issue":
                 pipeline.open_confirm_modal(ctx, client, draft, body["trigger_id"])
             elif action_id == "force_new":
-                settle(f"<@{actor}> chose to file a new issue.")
+                settle(
+                    f"<@{actor}> decided this is not a duplicate and is filing it as a new issue."
+                )
                 draft.state = DraftState.AWAITING_CONFIRM
                 store.save_draft(ctx.db, draft)
                 pipeline.open_confirm_modal(ctx, client, draft, body["trigger_id"])
@@ -116,7 +118,10 @@ def register_handlers(app: App, ctx) -> None:  # noqa: ANN001
                 if not target:
                     return
                 repo, number = target.group("repo"), int(target.group("number"))
-                settle(f"<@{actor}> chose to add this to {repo}#{number}.")
+                settle(
+                    f"<@{actor}> decided this is a duplicate of {repo}#{number}"
+                    " and added the report there."
+                )
                 pipeline.append_draft(ctx, client, draft, repo=repo, number=number, actor_id=actor)
         except pipeline.PipelineError as exc:
             respond(text=str(exc), replace_original=False)
