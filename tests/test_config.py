@@ -26,3 +26,8 @@ def test_endpoint_embeddings_need_url(base_env, monkeypatch):
     monkeypatch.setenv("EMBEDDING_PROVIDER", "endpoint")
     with pytest.raises(ValueError, match="EMBEDDING_BASE_URL"):
         Settings()
+
+
+def test_extra_headers_parse_from_json(base_env, monkeypatch):
+    monkeypatch.setenv("LLM_EXTRA_HEADERS", '{"anthropic-workspace-id": "wrkspc_1"}')
+    assert Settings().llm_extra_headers == {"anthropic-workspace-id": "wrkspc_1"}

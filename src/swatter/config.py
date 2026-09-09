@@ -27,12 +27,16 @@ class Settings(BaseSettings):
     llm_base_url: str = "https://api.anthropic.com/v1/"
     llm_api_key: str = ""
     llm_model: str = "claude-haiku-4-5-20251001"
+    # JSON object of extra HTTP headers, for provider quirks such as Anthropic's
+    # anthropic-workspace-id on organisation-level keys or OpenRouter's HTTP-Referer.
+    llm_extra_headers: dict[str, str] = {}
 
     # Embeddings
     embedding_provider: Literal["fastembed", "endpoint"] = "fastembed"
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_base_url: str | None = None
     embedding_api_key: str | None = None
+    embedding_extra_headers: dict[str, str] = {}
 
     # Swatter behaviour
     swatter_db_path: Path = Path("data/swatter.db")

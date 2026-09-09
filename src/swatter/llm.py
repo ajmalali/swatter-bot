@@ -54,6 +54,7 @@ class LLMClient:
         self._client = OpenAI(
             base_url=settings.llm_base_url,
             api_key=settings.llm_api_key or "none",
+            default_headers=settings.llm_extra_headers or None,
         )
 
     def complete_json(
