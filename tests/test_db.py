@@ -28,3 +28,25 @@ def test_reopening_same_file_keeps_data(tmp_path):
     _insert(Database(path), 7, "t", "b")
     again = Database(path)
     assert again.one("SELECT number FROM issues")["number"] == 7
+
+
+def test_old_single_binding_schema_is_migrated(tmp_path):
+    import sqlite3
+
+    path = tmp_path / "old.db"
+    old = sqlite3.connect(path)
+    old.executescript(
+        "CREATE TABLE bindings (channel_id TEXT PRIMARY KEY, repo TEXT NOT NULL, template TEXT,"
+        " bound_by TEXT NOT NULL, bound_at TEXT NOT NULL);"
+        " INSERT INTO bindings VALUES ('C1', 'o/web', NULL, 'U1', '2026-01-01T00:00:00Z');"
+    )
+    old.commit()
+    old.close()
+
+    from swatter.store import add_binding, bindings_for_channel
+
+    db = Database(path)
+    add_binding(db, "C1", "o/api", None, "U2")
+    assert [b.repo for b in bindings_for_channel(db, "C1")] == ["o/web", "o/api"]
+    # Idempotent: reopening does not lose rows.
+    assert len(bindings_for_channel(Database(path), "C1")) == 2

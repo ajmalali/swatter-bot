@@ -133,6 +133,35 @@ class Database:
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA synchronous=NORMAL")
         self._conn.executescript(SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Bring tables created by older versions up to date. Each step is idempotent."""
+        pk = [
+            r["name"]
+            for r in self._conn.execute("PRAGMA table_info(bindings)").fetchall()
+            if r["pk"]
+        ]
+        if pk != ["channel_id", "repo"]:
+            # Before multi-Binding channels, channel_id alone was the primary key.
+            self._conn.executescript(
+                """
+                CREATE TABLE bindings_new (
+                    channel_id  TEXT NOT NULL,
+                    repo        TEXT NOT NULL,
+                    template    TEXT,
+                    bound_by    TEXT NOT NULL,
+                    bound_at    TEXT NOT NULL,
+                    PRIMARY KEY (channel_id, repo)
+                );
+                INSERT OR IGNORE INTO bindings_new
+                    SELECT channel_id, repo, template, bound_by, bound_at
+                    FROM bindings;
+                DROP TABLE bindings;
+                ALTER TABLE bindings_new RENAME TO bindings;
+                """
+            )
+            self._conn.commit()
 
     @contextmanager
     def tx(self) -> Iterator[sqlite3.Connection]:
