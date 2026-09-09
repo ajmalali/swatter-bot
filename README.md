@@ -57,3 +57,11 @@ formatting slips from smaller models.
 | `swatter health` | Check Slack auth, GitHub auth, and the database |
 | `swatter sync [owner/repo]` | Full re-index of a bound repo's Issues |
 | `swatter eval` | Replay `eval/golden.jsonl` and report dedup precision and recall |
+
+## Evaluation
+
+`eval/golden.jsonl` has one JSON object per line: `repo`, `report`, optional `thread`, and
+`expected` (the Issue number the report duplicates, or `null` for a new bug). Copy
+`eval/golden.example.jsonl` to start. Run `swatter sync owner/repo` first so the Issues are
+indexed, then `swatter eval`. Structuring, retrieval, and the judge run for real; the numbers are
+comparable across model swaps because prompts and thresholds never change.

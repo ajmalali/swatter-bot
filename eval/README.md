@@ -6,3 +6,6 @@ through structuring, retrieval, and the judge, then prints precision and recall 
 
 Add a row whenever the bot gets one wrong in real use. Run the eval before and after changing the
 model, the prompts, or the retrieval settings.
+
+Row format: `{"repo": "owner/repo", "report": "...", "thread": "...", "expected": 42}`.
+See `golden.example.jsonl`.

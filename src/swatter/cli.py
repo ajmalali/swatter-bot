@@ -99,11 +99,12 @@ def _context(settings, with_slack: bool = False):  # noqa: ANN001
     import logging
 
     from swatter.db import Database
-    from swatter.slack.app import AppContext, build_services
+    from swatter.slack.app import AppContext, build_services, quiet_http_logs
 
     logging.basicConfig(
         level=settings.swatter_log_level, format="%(levelname)s %(name)s: %(message)s"
     )
+    quiet_http_logs()
     ctx = build_services(AppContext(settings=settings, db=Database(settings.swatter_db_path)))
     if not with_slack:
         ctx.slack = None  # a sync never sends notifications

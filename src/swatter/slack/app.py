@@ -38,6 +38,12 @@ def build_app(ctx: AppContext) -> App:
     return app
 
 
+def quiet_http_logs() -> None:
+    """httpx and fastembed log every request at INFO; that drowns Swatter's own lines."""
+    for name in ("httpx", "httpcore", "urllib3", "fastembed", "huggingface_hub"):
+        logging.getLogger(name).setLevel(logging.WARNING)
+
+
 def build_services(ctx: AppContext) -> AppContext:
     """Attach the LLM, embedder, GitHub, and Slack clients. Imports fastembed lazily."""
     from slack_sdk import WebClient
@@ -58,6 +64,7 @@ def run(settings: Settings) -> None:
         level=settings.swatter_log_level,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    quiet_http_logs()
     db = Database(settings.swatter_db_path)
     ctx = AppContext(settings=settings, db=db)
 
