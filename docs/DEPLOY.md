@@ -13,7 +13,7 @@ firewall rule. Run exactly one instance.
 ## Deploy with Docker
 
 ```sh
-git clone https://github.com/<you>/swatter-bot && cd swatter-bot
+git clone https://github.com/ajmalali/swatter-bot && cd swatter-bot
 scp laptop:swatter-bot/.env .                   # secrets, never in git
 scp laptop:swatter-bot/data/swatter.db data/    # optional: keep Bindings and Subscriptions
 docker compose up -d

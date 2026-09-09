@@ -34,7 +34,7 @@ need no key.
 ## 4. Configure and run
 
 ```sh
-git clone https://github.com/<you>/swatter-bot && cd swatter-bot
+git clone https://github.com/ajmalali/swatter-bot && cd swatter-bot
 cp .env.example .env        # fill in the three tokens and the LLM key
 uv sync
 uv run swatter health --llm # every line should say ok
