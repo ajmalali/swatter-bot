@@ -11,8 +11,8 @@ features:
     always_online: true
   slash_commands:
     - command: /swatter
-      description: Bind this channel to a GitHub repo
-      usage_hint: connect owner/repo [template]
+      description: Bind this channel to one or more GitHub repos
+      usage_hint: connect owner/repo [template] | disconnect owner/repo | list
       should_escape: false
   shortcuts:
     - name: File as bug

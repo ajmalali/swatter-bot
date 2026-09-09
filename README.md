@@ -28,7 +28,9 @@ Design and vocabulary: [docs/DESIGN.md](docs/DESIGN.md), [CONTEXT.md](CONTEXT.md
    uv sync && uv run swatter run
    ```
 
-6. In Slack, invite the bot to a channel and run `/swatter connect owner/repo`.
+6. In Slack, invite the bot to a channel and run `/swatter connect owner/repo`. Run it again with a
+   second repo and Swatter will pick the right one per report from the repos' GitHub descriptions,
+   with a dropdown to override before filing.
 
 `uv run swatter health` checks Slack, GitHub, and the database.
 

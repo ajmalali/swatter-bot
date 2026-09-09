@@ -13,12 +13,14 @@ from contextlib import contextmanager
 from pathlib import Path
 
 SCHEMA = """
+-- A channel may bind several repos; the LLM then chooses among them (see DESIGN.md step 2).
 CREATE TABLE IF NOT EXISTS bindings (
-    channel_id  TEXT PRIMARY KEY,
+    channel_id  TEXT NOT NULL,
     repo        TEXT NOT NULL,
     template    TEXT,
     bound_by    TEXT NOT NULL,
-    bound_at    TEXT NOT NULL
+    bound_at    TEXT NOT NULL,
+    PRIMARY KEY (channel_id, repo)
 );
 
 CREATE TABLE IF NOT EXISTS issues (

@@ -9,7 +9,10 @@ from pydantic import BaseModel, Field
 
 
 class Binding(BaseModel):
-    """A Slack channel files into this repo, optionally using a named template."""
+    """A Slack channel may file into this repo, optionally using a named template.
+
+    One row per (channel, repo). A channel with several rows lets the LLM choose the repo.
+    """
 
     channel_id: str
     repo: str

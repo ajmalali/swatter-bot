@@ -13,17 +13,17 @@ Agreed 2026-09-08. Vocabulary is in `CONTEXT.md`; the reasoning behind the big c
 - GitHub auth: fine-grained PAT for quick start, GitHub App as the documented upgrade. Same PyGithub client either way.
 - LLM: one setting, OpenAI-compatible base URL, key, and model (ADR 0002). Anthropic, OpenAI, OpenRouter, Groq, or Ollama. No per-task override yet.
 - Embeddings: fastembed locally by default; optional OpenAI-compatible embeddings endpoint.
-- Bindings: env default repo, overridden per channel by `/swatter connect owner/repo [template]`. Anyone may run it; the actor is logged.
+- Bindings: env default repo, plus any number per channel added with `/swatter connect owner/repo [template]` and removed with `/swatter disconnect owner/repo`. Anyone may run them; the actor is logged. A channel with several Bindings lets the LLM choose the repo (see step 2); a channel with one behaves as before.
 - Template: the repo's issue template whose filename contains "bug", or the one named on the Binding, else Swatter's default. Issue forms supply required fields; for Markdown templates, steps, expected, and actual count as required.
 
 ## Flow for one Report
 
 1. Trigger by app mention or the "File as bug" message shortcut. Fetch the full thread.
-2. Code fetches the repo's labels and Template and derives the field list. The LLM fills the fields as JSON, validated with Pydantic, one retry with the error fed back (ADR 0004).
-3. Hybrid retrieval over the bound repo's open Issues and those closed within 30 days: FTS5 top 10, cosine top 10, reciprocal rank fusion, top three to the LLM judge (ADR 0003).
+2. Code fetches each bound repo's description, labels, and Template. When the channel has more than one Binding, `repo` is an extra enum field constrained to the bound list, decided from the repo descriptions; labels and Template come from the chosen repo. The LLM fills the fields as JSON, validated with Pydantic, one retry with the error fed back (ADR 0004).
+3. Hybrid retrieval over every bound repo's open Issues and those closed within 30 days, so a duplicate filed in the other repo is still caught: FTS5 top 10, cosine top 10, reciprocal rank fusion, top three to the LLM judge (ADR 0003). Each Candidate shows its repo.
 4. Candidates found: offer up to three Append buttons plus Force New Issue. Closed Candidates get reopen wording. Append posts a templated comment with the verbatim quote and Slack permalink. No Clarification on this path.
 5. No Candidates and required fields empty: one Clarification message in the thread with up to three LLM-written questions and, when the LLM flags it, a screenshot request. Anyone in the thread may answer. Ends on Done, Skip, or a 30-minute timer. Unanswered questions are logged. Re-structure, retrieve once more.
-6. Confirmation modal with editable fields; anyone in the channel may confirm. Code renders the Template, quotes the Report verbatim, adds reporter display name, channel, and permalink, embeds Attachments from the `swatter-assets` orphan branch, and marks empty fields as not provided.
+6. Confirmation modal with editable fields and, for multi-Binding channels, a repo dropdown pre-selected to the LLM's choice; anyone in the channel may confirm. Code renders the Template, quotes the Report verbatim, adds reporter display name, channel, and permalink, embeds Attachments from the `swatter-assets` orphan branch, and marks empty fields as not provided.
 7. Filing or appending creates a Subscription. Polling catches close, reopen, edits, and Issues filed outside Slack, and keeps the index current. Close notifies by DM and thread reply, with distinct wording for completed versus not planned. Reopen replies in the thread.
 
 ## Storage and evidence
@@ -34,7 +34,7 @@ Agreed 2026-09-08. Vocabulary is in `CONTEXT.md`; the reasoning behind the big c
 ## Assumptions
 
 - Unconfirmed Drafts never auto-file; their buttons keep working indefinitely.
-- Labels are fetched at Draft time so they are always current.
+- Labels and repo descriptions are fetched at Draft time so they are always current. A repo's GitHub description is the only routing hint the LLM gets, so adopters should write a good one.
 - Recommended minimum local model sizes are documented in the README, not enforced.
 - Private-repo inline rendering of Attachments via blob URLs is to be verified during the build.
 

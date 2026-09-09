@@ -21,7 +21,7 @@ An existing Issue that retrieval surfaced as a possible duplicate of a Draft. On
 _Avoid_: Match, duplicate, hit
 
 **Binding**:
-The rule that a Slack channel files into a given repo. Also defines which repos get indexed.
+The rule that a Slack channel may file into a given repo. A channel can have several; together they define which repos get indexed and which the LLM may choose between.
 _Avoid_: Mapping, connection, config
 
 **Subscription**:

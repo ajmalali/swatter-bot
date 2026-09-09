@@ -1,7 +1,7 @@
 """Slack entry points. Each one acks within Slack's 3-second window, then does the work.
 
 Triggers:   app_mention, message shortcut `file_bug`
-Command:    /swatter connect owner/repo [template]
+Command:    /swatter connect owner/repo [template] | disconnect owner/repo | list
 Actions:    append:<n>, force_new, open_issue, cancel, clarify_done, clarify_skip, reopen:<n>
 Events:     thread replies while a Draft is clarifying (message.channels / message.groups)
 
