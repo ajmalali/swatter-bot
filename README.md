@@ -10,7 +10,7 @@ existing Issues before filing, and tells the reporter when the Issue is closed o
 - No inbound traffic: Slack Socket Mode plus GitHub polling. Runs on a VPS, a home server, or a laptop.
 - Any OpenAI-compatible LLM: Anthropic, OpenAI, OpenRouter, Groq, or a local Ollama model.
 
-Design and vocabulary: [docs/DESIGN.md](docs/DESIGN.md), [CONTEXT.md](CONTEXT.md), [docs/adr](docs/adr).
+How it works: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Design and vocabulary: [docs/DESIGN.md](docs/DESIGN.md), [CONTEXT.md](CONTEXT.md), [docs/adr](docs/adr).
 
 ## Quick start
 
