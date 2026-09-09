@@ -38,7 +38,13 @@ body:
 def test_schema_constrains_labels_dropdowns_and_checkboxes():
     schema = build_schema(parse_issue_form(FORM), ["bug", "ui"])
     ok = schema.model_validate(
-        {"title": "t", "labels": ["bug"], "steps": "1", "browser": "Chrome", "checks": ["Searched"]}
+        {
+            "title": "t",
+            "labels": ["bug"],
+            "steps_to_reproduce": "1",
+            "browser": "Chrome",
+            "checks": ["Searched"],
+        }
     )
     assert ok.browser == "Chrome"
     with pytest.raises(ValidationError):

@@ -28,12 +28,29 @@ class AppContext:
     llm: object | None = None
     embedder: object | None = None
     github: object | None = None
+    slack: object | None = None  # a WebClient for the poller's notifications
+    bot_user_id: str | None = None
 
 
 def build_app(ctx: AppContext) -> App:
     app = App(token=ctx.settings.slack_bot_token)
     register_handlers(app, ctx)
     return app
+
+
+def build_services(ctx: AppContext) -> AppContext:
+    """Attach the LLM, embedder, GitHub, and Slack clients. Imports fastembed lazily."""
+    from slack_sdk import WebClient
+
+    from swatter.embeddings import build_embedder
+    from swatter.github import GitHubService, build_client
+    from swatter.llm import LLMClient
+
+    ctx.llm = LLMClient(ctx.settings, ctx.db)
+    ctx.embedder = build_embedder(ctx.settings)
+    ctx.github = GitHubService(build_client(ctx.settings), ctx.settings)
+    ctx.slack = WebClient(token=ctx.settings.slack_bot_token)
+    return ctx
 
 
 def run(settings: Settings) -> None:
@@ -44,13 +61,7 @@ def run(settings: Settings) -> None:
     db = Database(settings.swatter_db_path)
     ctx = AppContext(settings=settings, db=db)
 
-    from swatter.embeddings import build_embedder
-    from swatter.github import GitHubService, build_client
-    from swatter.llm import LLMClient
-
-    ctx.llm = LLMClient(settings, db)
-    ctx.embedder = build_embedder(settings)
-    ctx.github = GitHubService(build_client(settings), settings)
+    build_services(ctx)
 
     app = build_app(ctx)
     threading.Thread(

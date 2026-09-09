@@ -1,0 +1,2 @@
+{"repo": "owner/repo", "report": "Checkout spinner never stops after I press Pay on Safari", "thread": "", "expected": 42}
+{"repo": "owner/repo", "report": "The CSV export downloads an empty file when the date filter is set", "thread": "", "expected": null}
