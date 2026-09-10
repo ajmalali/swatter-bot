@@ -63,7 +63,7 @@ journalctl -u swatter -f
 | Update | `git pull && docker compose up -d --build` |
 | Back up | copy `data/swatter.db` |
 | Check | `docker compose exec swatter uv run swatter health --llm` |
-| Re-index a repo | `docker compose exec swatter uv run swatter sync owner/repo` |
+| Re-index a repo, prune deleted Issues | `docker compose exec swatter uv run swatter sync owner/repo` |
 | Logs | `docker compose logs -f` |
 
 Network drops are fine: Bolt reconnects the Slack socket on its own, and the poller resumes from

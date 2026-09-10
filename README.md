@@ -45,8 +45,18 @@ formatting slips from smaller models.
 |---|---|
 | `swatter run` | Start the bot: Slack socket connection plus the GitHub poller |
 | `swatter health` | Check Slack auth, GitHub auth, and the database |
-| `swatter sync [owner/repo]` | Full re-index of a bound repo's Issues |
+| `swatter sync [owner/repo]` | Full re-index of a bound repo's Issues, and drop any GitHub no longer has |
 | `swatter eval` | Replay `eval/golden.jsonl` and report dedup precision and recall |
+
+## In Slack
+
+| Command | What it does |
+|---|---|
+| `@swatter` in a thread | File the thread's bug report |
+| `@swatter help` | What Swatter does and where this channel files |
+| `/swatter connect owner/repo [template]` | Let this channel file into that repo |
+| `/swatter disconnect owner/repo` | Stop filing there |
+| `/swatter list` | Show this channel's repos |
 
 ## Evaluation
 
@@ -55,3 +65,11 @@ formatting slips from smaller models.
 `eval/golden.example.jsonl` to start. Run `swatter sync owner/repo` first so the Issues are
 indexed, then `swatter eval`. Structuring, retrieval, and the judge run for real; the numbers are
 comparable across model swaps because prompts and thresholds never change.
+
+## Roadmap
+
+Where this is going next: [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).

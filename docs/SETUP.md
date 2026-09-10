@@ -52,6 +52,8 @@ In Slack:
    Swatter then picks the repo per report from the repos' GitHub descriptions.
 3. Post a bug and mention the bot in it, or reply `@Swatter` under an existing message, or use the
    **File as bug** message shortcut.
+4. `@Swatter help` (or `/swatter help`) prints what the bot does and which repos this channel
+   files into — the fastest thing to point a new reporter at.
 
 The first poll indexes the repo's open Issues, so duplicate detection works from the first report.
 
@@ -60,7 +62,7 @@ The first poll indexes the repo's open Issues, so duplicate detection works from
 | Command | Purpose |
 |---|---|
 | `uv run swatter health --llm` | Check Slack, GitHub, database, and the LLM |
-| `uv run swatter sync [owner/repo]` | Full re-index of a repo's Issues |
+| `uv run swatter sync [owner/repo]` | Full re-index of a repo's Issues, and prune any GitHub no longer has |
 | `uv run swatter eval` | Replay `eval/golden.jsonl`, print dedup precision and recall |
 | `uv run pytest` | Run the tests |
 

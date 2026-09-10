@@ -76,16 +76,25 @@ notified. Swapping the model changes the quality of the field values, never the 
 
 Plain REST calls through PyGithub, not GitHub Actions:
 
-- Read: repo description (routing hint), labels, issue template, Issues updated since the cursor.
+- Read: repo description (routing hint), labels, issue template, Issues updated since the cursor,
+  and whether one Issue still exists.
 - Write: create an Issue, comment on one, reopen one, commit an image to the `swatter-assets`
   orphan branch so the Issue can embed it.
+
+The existence check is there because deletion has no other signal. A deleted or transferred Issue
+simply stops being listed, with no `updated_at` bump and no tombstone, so polling alone can never
+notice it. Swatter therefore asks directly, in two places: before a Candidate is judged or shown,
+and before an Append comments on one. A 404, or a redirect to another repo, drops the Issue from
+the index; any other error keeps it, because a rate limit is not a deletion.
 
 ### Storage and search
 
 One SQLite file holds everything. The Issue index is searched two ways without any external
 service: an FTS5 table for keywords and an embedding vector per Issue for meaning, computed
 in-process by fastembed. Results are merged with reciprocal rank fusion and the top three go to the
-judge (ADR 0003). Every LLM prompt and response is logged, so `swatter eval` can measure a model
+judge (ADR 0003). Rows leave the index only when GitHub says the Issue is gone — on sight during a
+Report, or in bulk during `swatter sync`, which asks about every indexed Issue its full fetch did
+not return. Every LLM prompt and response is logged, so `swatter eval` can measure a model
 swap against the golden set.
 
 ## One Report, end to end
@@ -109,7 +118,9 @@ sequenceDiagram
     end
     W->>L: structure: fill the Template's fields
     W->>W: FTS5 + cosine over the local index, RRF, top 3
-    loop each Candidate
+    W->>G: does each Candidate still exist?
+    Note over W,G: a deleted or transferred Issue is dropped from the index here
+    loop each surviving Candidate
         W->>L: judge: same bug?
     end
     alt a Candidate is confirmed
@@ -117,6 +128,7 @@ sequenceDiagram
         U->>S: presses Append
         S-->>W: block_actions
         W->>G: comment (reopen first if closed)
+        Note over W,S: buttons stay until the comment lands,<br/>so a gone Issue can still be filed as new
     else required fields empty
         W->>L: clarify: write up to 3 questions
         W->>S: questions + Done / Skip

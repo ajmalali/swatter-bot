@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "Turns Slack bug reports into deduplicated GitHub issues and tells the reporter when they close."
 readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
     "slack-bolt>=1.21",
     "slack-sdk>=3.33",
