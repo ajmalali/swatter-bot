@@ -93,7 +93,7 @@ never rewritten — so anything here edits Swatter's own rendering, never a pers
 
 - **Reconciliation on a timer.** Deleted and transferred Issues are dropped on sight and by
   `swatter sync`, but the two-minute poll never sweeps, so a deleted Issue can sit in the index
-  until someone runs a sync. Picking it up means a cadence and a setting.
-  See `.flux/plans/01-deleted-issues-and-help.md`.
+  until someone runs a sync. The sweep itself already exists as `poller.reconcile_repo`; what is
+  missing is a cadence to run it on and a setting to control it.
 - **Subscriptions to a pruned Issue** are left in place and are inert. Cleaning them up means
   deciding what, if anything, to tell the people who were watching.
